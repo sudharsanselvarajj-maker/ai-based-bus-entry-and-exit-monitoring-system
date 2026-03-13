@@ -1,0 +1,29 @@
+# Virtual Environments
+venv/
+backend/venv/
+cv_pipeline/venv/
+.venv/
+env/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Databases
+*.db
+backend/*.db
+
+# IDEs
+.vscode/
+.idea/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Large Models/Weights
+*.pt
+cv_pipeline/*.pt
+    

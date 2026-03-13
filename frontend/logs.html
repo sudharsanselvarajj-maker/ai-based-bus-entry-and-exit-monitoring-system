@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Entry-Exit Monitor | Traffic Logs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-[#0F172A] text-slate-100 font-sans min-h-screen">
+    <!-- Sidebar -->
+    <aside class="fixed left-0 top-0 h-full w-64 bg-slate-900 border-r border-slate-800 z-50">
+        <div class="p-6">
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
+                Bus Entry-Exit AI
+            </h1>
+        </div>
+        <nav class="mt-6 px-4">
+            <a href="index.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl mb-2 transition-all">
+                <i class="fas fa-home"></i><span class="font-medium">Dashboard</span>
+            </a>
+            <a href="logs.html" class="flex items-center gap-3 px-4 py-3 bg-blue-600/10 text-blue-400 rounded-xl mb-2">
+                <i class="fas fa-history"></i><span class="font-medium">Traffic Logs</span>
+            </a>
+            <a href="vehicles.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl mb-2">
+                <i class="fas fa-bus"></i><span class="font-medium">Fleet Register</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-64 p-8">
+        <header class="mb-10 flex justify-between items-end">
+            <div>
+                <h2 class="text-3xl font-bold text-white">Historical Logs</h2>
+                <p class="text-slate-400 mt-1">Full audit trail of campus movements</p>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="window.location.reload()" class="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg hover:bg-slate-700 transition-all">
+                    <i class="fas fa-sync-alt mr-2"></i>Refresh
+                </button>
+            </div>
+        </header>
+
+        <div class="glass-card overflow-hidden">
+            <div class="p-6 border-b border-slate-800 flex flex-wrap gap-4 items-center">
+                <div class="flex-1 min-w-[200px] relative">
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                    <input type="text" placeholder="Search Plate Number..." class="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-2 pl-12 pr-4 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <select class="bg-slate-900 border border-slate-700 rounded-xl py-2 px-4 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option>All Events</option>
+                    <option>Entry</option>
+                    <option>Exit</option>
+                </select>
+                <input type="date" class="bg-slate-900 border border-slate-700 rounded-xl py-2 px-4 focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+
+            <table class="w-full text-left">
+                <thead class="bg-slate-900/50 text-slate-400 text-xs uppercase">
+                    <tr>
+                        <th class="px-6 py-4">ID</th>
+                        <th class="px-6 py-4">Vehicle No</th>
+                        <th class="px-6 py-4">Event Type</th>
+                        <th class="px-6 py-4">Timestamp</th>
+                        <th class="px-6 py-4">Confidence</th>
+                        <th class="px-6 py-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="logs-table-body" class="divide-y divide-slate-800/50">
+                    <!-- Logs will be loaded via JS -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const logs = await api.fetchLogs();
+            const tableBody = document.getElementById('logs-table-body');
+            
+            if (logs.length > 0) {
+                tableBody.innerHTML = logs.map(log => `
+                    <tr class="hover:bg-slate-800/30 transition-colors">
+                        <td class="px-6 py-4 text-slate-500 font-mono text-sm">#${log.id}</td>
+                        <td class="px-6 py-4 font-mono font-bold font-lg">${log.plate_number}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 rounded-full text-xs font-bold ${log.event_type === 'ENTRY' ? 'bg-blue-500/10 text-blue-400' : 'bg-emerald-500/10 text-emerald-400'}">
+                                ${log.event_type}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-slate-400">${new Date(log.timestamp).toLocaleString()}</td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-16 bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                    <div class="bg-blue-500 h-full" style="width: ${log.confidence_score * 100}%"></div>
+                                </div>
+                                <span class="text-xs text-slate-400">${(log.confidence_score * 100).toFixed(0)}%</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <button class="text-slate-500 hover:text-white"><i class="fas fa-eye"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tableBody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center text-slate-500">No logs found.</td></tr>';
+            }
+        });
+    </script>
+</body>
+</html>

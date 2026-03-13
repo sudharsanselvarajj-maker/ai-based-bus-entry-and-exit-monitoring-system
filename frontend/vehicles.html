@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Entry-Exit Monitor | Fleet Register</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body class="bg-[#0F172A] text-slate-100 font-sans min-h-screen">
+    <!-- Sidebar -->
+    <aside class="fixed left-0 top-0 h-full w-64 bg-slate-900 border-r border-slate-800 z-50">
+        <div class="p-6">
+            <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">Bus Entry-Exit AI</h1>
+        </div>
+        <nav class="mt-6 px-4">
+            <a href="index.html"
+                class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl mb-2"><i
+                    class="fas fa-home"></i>Dashboard</a>
+            <a href="logs.html"
+                class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl mb-2"><i
+                    class="fas fa-history"></i>Traffic Logs</a>
+            <a href="vehicles.html"
+                class="flex items-center gap-3 px-4 py-3 bg-blue-600/10 text-blue-400 rounded-xl mb-2"><i
+                    class="fas fa-bus"></i>Fleet Register</a>
+        </nav>
+    </aside>
+
+    <main class="ml-64 p-8">
+        <header class="mb-10 flex justify-between items-end">
+            <div>
+                <h2 class="text-3xl font-bold text-white">Fleet Register</h2>
+                <p class="text-slate-400 mt-1">Manage authorized institutional vehicles</p>
+            </div>
+            <button onclick="toggleModal()"
+                class="px-6 py-2 bg-blue-600 rounded-xl hover:bg-blue-500 font-bold transition-all shadow-lg shadow-blue-600/20">
+                <i class="fas fa-plus mr-2"></i>Add Vehicle
+            </button>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="fleet-grid">
+            <!-- Cards loaded via JS -->
+        </div>
+    </main>
+
+    <!-- Modal for adding vehicle -->
+    <div id="modal"
+        class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md p-8">
+            <h3 class="text-2xl font-bold mb-6">Register New Vehicle</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm text-slate-400 mb-2">Plate Number</label>
+                    <input id="in-plate" type="text" placeholder="e.g. TN-01-AB-1234"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-2">Bus Name/Route</label>
+                    <input id="in-name" type="text" placeholder="e.g. Route 42 - Main Campus"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            <div class="flex gap-4 mt-8">
+                <button onclick="toggleModal()"
+                    class="flex-1 py-3 text-slate-400 hover:text-white border border-slate-700 rounded-xl">Cancel</button>
+                <button onclick="saveVehicle()"
+                    class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold">Save Vehicle</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        function toggleModal() {
+            document.getElementById('modal').classList.toggle('hidden');
+        }
+
+        async function saveVehicle() {
+            const plate = document.getElementById('in-plate').value;
+            const name = document.getElementById('in-name').value;
+            if (!plate) return alert('Plate is required');
+
+            const response = await fetch('http://localhost:8000/vehicles/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ plate_number: plate, bus_nickname: name })
+            });
+
+            if (response.ok) {
+                toggleModal();
+                loadFleet();
+            } else {
+                const err = await response.json();
+                alert(err.detail);
+            }
+        }
+
+        async function loadFleet() {
+            const response = await fetch('http://localhost:8000/vehicles/');
+            const vehicles = await response.json();
+            const grid = document.getElementById('fleet-grid');
+
+            grid.innerHTML = vehicles.map(v => `
+                <div class="glass-card p-6 flex flex-col justify-between h-48 group">
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <div class="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-lg font-mono text-sm font-bold">
+                                ${v.plate_number}
+                            </div>
+                            <button onclick="deleteVehicle('${v.plate_number}')" class="text-slate-600 hover:text-danger opacity-0 group-hover:opacity-100 transition-all">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        <h4 class="text-xl font-bold mt-4">${v.bus_nickname || 'Unnamed Route'}</h4>
+                        <p class="text-slate-500 text-sm mt-1">Registered Vehicle</p>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs text-accent font-medium">
+                        <i class="fas fa-check-circle"></i> Authorized Fleet
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function deleteVehicle(plate) {
+            if (!confirm('Are you sure?')) return;
+            await fetch(`http://localhost:8000/vehicles/${plate}`, {method: 'DELETE'});
+            loadFleet();
+        }
+
+        document.addEventListener('DOMContentLoaded', loadFleet);
+    </script>
+</body>
+
+</html>
