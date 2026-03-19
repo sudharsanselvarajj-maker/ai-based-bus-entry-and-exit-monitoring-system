@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException  # type: ignore
+from sqlalchemy.orm import Session  # type: ignore
 from typing import List
 from database import get_db
-import models as models
-import schemas as schemas
+import models
+import schemas
 
 router = APIRouter(
     prefix="/vehicles",

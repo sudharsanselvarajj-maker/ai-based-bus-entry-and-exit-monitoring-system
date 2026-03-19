@@ -50,8 +50,8 @@ async function refreshDashboard() {
         document.getElementById('latest-capture-time').textContent = `Detected at ${new Date(latest.timestamp).toLocaleTimeString()}`;
         document.getElementById('latest-plate-badge').classList.remove('hidden');
         if (latest.image_path) {
-            // In a real app, this would be a URL to the server
-            // document.getElementById('latest-capture-img').src = latest.image_path;
+            // Display the captured image from the backend static folder
+            document.getElementById('latest-capture-img').src = `http://localhost:8000/captures/${latest.image_path}`;
         }
     } else {
         tableBody.innerHTML = '<tr><td colspan="3" class="px-6 py-10 text-center text-slate-500">No activity recorded today.</td></tr>';

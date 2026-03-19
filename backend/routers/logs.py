@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException  # type: ignore
+from sqlalchemy.orm import Session  # type: ignore
 from typing import List
 from database import get_db
-import models as models
-import schemas as schemas
+import models
+import schemas
 
 router = APIRouter(
     prefix="/logs",
@@ -17,6 +17,18 @@ def get_logs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
 
 @router.post("/", response_model=schemas.BusLog)
 def create_log(log: schemas.BusLogCreate, db: Session = Depends(get_db)):
+    # Find the most recent log for this plate
+    last_log = db.query(models.BusLog)\
+                 .filter(models.BusLog.plate_number == log.plate_number)\
+                 .order_by(models.BusLog.timestamp.desc())\
+                 .first()
+    
+    # Toggle event_type automatically
+    if last_log and last_log.event_type == "ENTRY":
+        log.event_type = "EXIT"
+    else:
+        log.event_type = "ENTRY"
+
     db_log = models.BusLog(**log.model_dump())
     db.add(db_log)
     db.commit()

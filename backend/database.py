@@ -1,6 +1,6 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm import declarative_base
+from sqlalchemy import create_engine  # type: ignore
+from sqlalchemy.orm import sessionmaker  # type: ignore
+from sqlalchemy.orm import declarative_base  # type: ignore
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./smartgate.db"
 
